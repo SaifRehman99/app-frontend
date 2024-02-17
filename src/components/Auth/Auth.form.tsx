@@ -9,6 +9,7 @@ import useNotification from "@/hooks/useNotification";
 import makeApiRequest from "@utils/axios.interceptors";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuthForm } from "@/types";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   isSignUp: boolean;
@@ -18,17 +19,17 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
   const { showNotification } = useNotification();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [form, setForm] = useState<any>({});
+  const [form, setForm] = useState<AuthForm | null>(null);
   const [passwordVisibility, setPasswordVisibility] = useState<{ [key: string]: boolean }>({
     password: false,
     confirmPassword: false,
   });
 
-  const redirectPage = (userSignUp: boolean) => {
+  const redirectPage = () => {
     setTimeout(() => {
-      window.location.href = userSignUp ? "/login" : "/dashboard";
+      window.location.href = "/dashboard";
       setIsLoading(false);
-      setForm({});
+      setForm(null);
     }, 3000);
   };
 
@@ -36,10 +37,10 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
     // isAuth will true if user register
 
     // ============================ Reusing for registering here ===================================== //
-    const { password, confirmPassword, email, firstName, lastName } = form;
+    const { name, password, confirmPassword, email } = form as AuthForm;
 
-    if (isAuth && (!firstName || firstName?.length < 3) && (!lastName || lastName?.length < 3)) {
-      showNotification("destructive", "User Authentication", "First and Last name can't be Empty and should be greater then 3 words");
+    if (isAuth && (!name || name?.length < 3)) {
+      showNotification("destructive", "User Authentication", "Name can't be Empty and should be greater then 3 words");
       setIsLoading(false);
       return;
     }
@@ -56,7 +57,7 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
       return;
     }
 
-    if (isAuth && (!isValidPassword(password) || !isValidPassword(confirmPassword))) {
+    if (isAuth && (!isValidPassword(password as string) || !isValidPassword(confirmPassword as string))) {
       showNotification(
         "destructive",
         "User Authentication",
@@ -66,7 +67,7 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
       return;
     }
 
-    // ================================================================================================== //
+    // ============================ API Handing Below ========================================================== //
 
     try {
       if (!email || !password) {
@@ -79,38 +80,28 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
         response?: AxiosResponse<any, any> | undefined | any;
         error?: any;
         message?: any;
-      } = await makeApiRequest(`${isAuth ? "signup" : "login"}`, "POST", isAuth ? { email, password, firstName, lastName } : { email, password });
+      } = await makeApiRequest(`${isAuth ? "auth/signup" : "auth/login"}`, "POST", isAuth ? { name, email, password } : { email, password });
 
       if (data?.error?.data?.message || (data?.message && data?.response?.status !== 200)) {
         showNotification(
           "destructive",
           "User Authentication",
-          data?.error?.data?.message || data?.message || "Seems like, something went wrong! Try again later"
+          Array.isArray(data?.error?.data?.message)
+            ? data?.error?.data?.message.join(" ")
+            : data?.error?.data?.message || data?.message || "Seems like, something went wrong! Try again later"
         );
         setIsLoading(false);
         return;
       }
 
-      if (data?.data?.message === "stripe creation") {
-        setIsLoading(false);
-        window.location.href = data?.data?.data.url;
-        return;
-      }
-
-      if (!isAuth) {
-        // Access the headers from the response
-        const responseHeaders = data?.response.headers;
-
-        // Access the cookie header
-        const cookieHeader = responseHeaders["cookie"];
-
-        localStorage.setItem("token", JSON.stringify(cookieHeader.split("=")[1]));
-        localStorage.setItem("user", JSON.stringify(data?.data?.data));
+      if (data.data.token) {
+        localStorage.setItem("token", JSON.stringify(data?.data?.token));
+        localStorage.setItem("user", JSON.stringify(data?.data?.user));
+        redirectPage();
       }
 
       setIsLoading(false);
-      showNotification("default", "User Authentication", `User ${isAuth ? "Register" : "Login"} Success!`);
-      redirectPage(isAuth ? true : false);
+      showNotification("default", "User Authentication", data?.data?.message);
     } catch (error: any) {
       setIsLoading(false);
       showNotification("destructive", "User Authentication", error?.message || "Seems like, something went wrong! Try again later");
@@ -145,7 +136,7 @@ export function UserAuthForm({ className, isSignUp, ...props }: UserAuthFormProp
                         disabled={isLoading}
                         className="mb-4"
                         autoComplete="false"
-                        onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+                        onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value } as AuthForm)}
                       />
                       {["password", "confirmPassword"].includes(field.name) && (
                         <div

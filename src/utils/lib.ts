@@ -1,4 +1,4 @@
-export const getInitials = (firstName: string, lastName: string): string => {
+export const getInitials = (firstName: string, lastName?: string): string => {
   // Get the first character of the first name
   const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : "";
 

@@ -8,7 +8,7 @@ import "./index.css";
 const checkAuth = JSON.parse(localStorage.getItem("token") as any);
 
 // Combine and conditionally include routes based on authentication status
-const router = createBrowserRouter([!checkAuth ? privateRoutes() : publicRoutes()]);
+const router = createBrowserRouter([checkAuth ? privateRoutes() : publicRoutes()]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <>

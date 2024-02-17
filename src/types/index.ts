@@ -10,3 +10,10 @@ export type ErrorType = {
   buttonLink?: string;
   buttonText?: string;
 };
+
+export type AuthForm = {
+  name: string;
+  email: string;
+  password?: string;
+  confirmPassword?: string;
+};

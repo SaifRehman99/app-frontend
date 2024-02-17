@@ -20,13 +20,13 @@ export default async function makeApiRequest(
   const options: any = {
     method,
     url: apiUrl,
-    headers: {
-      ...(JSON.parse(localStorage.getItem("token") as any)
-        ? {
-            Authorization: `Bearer ${JSON.parse(localStorage.getItem("token") as any)}`,
-          }
-        : {}),
-    },
+    headers: data
+      ? {
+          "Content-Type": "application/json",
+        }
+      : {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("token") as any)}`,
+        },
   };
 
   if (data) {
@@ -51,7 +51,7 @@ export default async function makeApiRequest(
       localStorage.removeItem("token");
       localStorage.clear();
       window.location.href = "/login";
-      window.location.reload();
+      // window.location.reload();
     }
     return { error: error.response, message: error?.message };
   }
