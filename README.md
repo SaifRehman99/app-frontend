@@ -24,6 +24,29 @@ export default {
 }
 ```
 
+- If want to add any folder for absolute import, add the below in `tsconfig.json` and `vite.config.js` :
+
+```js
+export default {
+  // vite.config.js
+  resolve: {
+    alias: {
+      "@FOLDER_NAME_HERE": path.resolve(__dirname, "PATH_HERE/*"),
+    },
+  },
+}
+```
+
+```js
+export default {
+  // tsconfig.json
+  "paths": {
+      "@/*": ["PATH/*"],
+      "@FOLDER_NAME_HERE/*": ["PATH_HERE/*"],
+    },
+}
+```
+
 - Replace `env-example` to `.env`
 - Add your backend route to `.env`
 - Run, `npm i`
